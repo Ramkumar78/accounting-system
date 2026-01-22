@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from '../api/axiosConfig';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const Login = () => {
@@ -101,7 +101,7 @@ const Login = () => {
                     </div>
 
                     <div className="mt-5 text-secondary">
-                        New to NetFin? <span className="text-white" style={{ cursor: 'pointer' }}>Sign up now</span>.
+                        New to NetFin? <Link to="/register" className="text-white" style={{ textDecoration: 'none' }}>Sign up now</Link>.
                     </div>
                 </form>
             </motion.div>

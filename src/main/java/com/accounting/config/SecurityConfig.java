@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/login", "/error", "/api/auth/**").permitAll()
+                .requestMatchers("/users/register").permitAll()
                 .requestMatchers("/admin/**", "/users/**").hasRole("ADMIN")
                 .requestMatchers("/journal/post/**", "/journal/void/**").hasAnyRole("ADMIN", "ACCOUNTANT")
                 .requestMatchers("/journal/new", "/journal/edit/**").hasAnyRole("ADMIN", "ACCOUNTANT")
