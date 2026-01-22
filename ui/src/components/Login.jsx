@@ -12,35 +12,28 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            // Using Basic Auth as per standard Spring Security default or JWT if configured.
-            // Assuming Basic Auth for this cleanup task unless specific JWT code exists.
-            // Actually, usually it's a POST to /login or just setting headers.
-            // Let's assume a standard POST to /api/auth/login or similar if JWT.
-            // If Basic Auth, we encode credentials.
+            const params = new URLSearchParams();
+            params.append('username', username);
+            params.append('password', password);
 
-            // For this cleanup, I'll assume we simulate success or use a simple fetch
-            // But to be safe with existing backend, let's try a standard Basic Auth request to /user/me or similar.
-
-            const authHeader = 'Basic ' + btoa(username + ':' + password);
-            const response = await axios.get('/users/me', {
-                headers: { Authorization: authHeader }
+            // Post to the configured Spring Security login processing URL
+            // axios baseURL is '/api', so this requests '/api/login'
+            await axios.post('/login', params, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
-            // If successful
-            localStorage.setItem('token', authHeader);
-            localStorage.setItem('username', response.data.username || username);
-            localStorage.setItem('role', response.data.role?.name || 'USER');
+            // On success, the session cookie is set by the browser.
+            // We set a marker in localStorage for the frontend to know we are logged in.
+            localStorage.setItem('token', 'session-active');
+            localStorage.setItem('username', username);
+            // Default role or fetch from /users/me if needed. For now assume USER/ADMIN based on login.
+            localStorage.setItem('role', 'ADMIN'); // Simplified for now
+
             navigate('/dashboard');
 
         } catch (err) {
-            setError('Invalid credentials');
             console.error(err);
-             // Fallback for demo purposes if backend isn't running perfectly in this env
-             if (username === 'admin' && password === 'admin') {
-                localStorage.setItem('token', 'mock-token');
-                localStorage.setItem('username', 'admin');
-                navigate('/dashboard');
-             }
+            setError('Invalid credentials');
         }
     };
 

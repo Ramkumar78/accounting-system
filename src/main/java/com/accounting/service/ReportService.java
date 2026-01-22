@@ -3,23 +3,31 @@ package com.accounting.service;
 import com.accounting.dto.BalanceSheetDTO;
 import com.accounting.dto.DashboardDTO;
 import com.accounting.dto.ProfitLossDTO;
+import com.accounting.dto.RecentTransactionDTO;
 import com.accounting.dto.TrialBalanceDTO;
 import com.accounting.model.Account;
 import com.accounting.model.AccountType;
 import com.accounting.model.EntryStatus;
 import com.accounting.model.InvoiceStatus;
+import com.accounting.model.JournalEntry;
+import com.accounting.model.JournalEntryLine;
 import com.accounting.repository.AccountRepository;
 import com.accounting.repository.InvoiceRepository;
 import com.accounting.repository.JournalEntryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ReportService {
 
     private final AccountRepository accountRepository;
@@ -183,6 +191,30 @@ public class ReportService {
 
         dashboard.setOverdueInvoices((long) invoiceRepository.findOverdueInvoices(today).size());
         dashboard.setOverdueAmount(invoiceRepository.sumTotalByStatus(InvoiceStatus.OVERDUE));
+
+        // Recent Transactions
+        PageRequest pageRequest = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "entryDate"));
+        List<JournalEntry> recentEntries = journalEntryRepository.findByStatus(EntryStatus.POSTED, pageRequest).getContent();
+
+        List<RecentTransactionDTO> transactions = recentEntries.stream().map(entry -> {
+            BigDecimal amount = BigDecimal.ZERO;
+            for (JournalEntryLine line : entry.getLines()) {
+                if (line.getAccount().getAccountType() == AccountType.REVENUE || line.getAccount().getAccountType() == AccountType.EQUITY) {
+                    amount = amount.add(line.getCreditAmount().subtract(line.getDebitAmount()));
+                } else if (line.getAccount().getAccountType() == AccountType.EXPENSE) {
+                    amount = amount.add(line.getCreditAmount().subtract(line.getDebitAmount()));
+                }
+            }
+            if (amount.compareTo(BigDecimal.ZERO) == 0) {
+                // If 0, it might be an asset/liability transfer. Show total debit as a fallback size indicator.
+                // Or maybe just show 0.
+                // Let's keep it simple and just show the total debit amount (which is the transaction size).
+                amount = entry.getTotalDebit();
+            }
+            return new RecentTransactionDTO(entry.getId(), entry.getDescription(), amount, entry.getEntryDate());
+        }).collect(Collectors.toList());
+
+        dashboard.setRecentTransactions(transactions);
 
         return dashboard;
     }

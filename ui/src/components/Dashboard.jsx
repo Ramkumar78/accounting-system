@@ -12,29 +12,34 @@ const Dashboard = () => {
     });
 
     useEffect(() => {
-        // Mock data for now as backend might not have these specific dashboard endpoints ready
-        // In real impl, fetch from /api/dashboard
         const fetchData = async () => {
             try {
-                // Simulate API call
-                 setMetrics({
-                     totalAssets: 125000.50,
-                     totalLiabilities: 45000.00,
-                     netIncome: 80000.50,
-                     recentTransactions: [
-                         { id: 1, desc: 'Sales Revenue', amount: 5000, date: '2023-10-25' },
-                         { id: 2, desc: 'Office Supplies', amount: -200, date: '2023-10-24' },
-                         { id: 3, desc: 'Consulting Fee', amount: 1500, date: '2023-10-23' },
-                         { id: 4, desc: 'Rent Payment', amount: -1000, date: '2023-10-22' },
-                         { id: 5, desc: 'Utility Bill', amount: -150, date: '2023-10-21' },
-                     ]
-                 });
+                // axios baseURL is '/api', so this requests '/api/dashboard'
+                const response = await axios.get('/dashboard');
+                console.log("Dashboard API response:", response.data);
+                if (response.data) {
+                    setMetrics(response.data);
+                }
             } catch (error) {
                 console.error("Error fetching dashboard data", error);
             }
         };
         fetchData();
     }, []);
+
+    const formatDate = (date) => {
+        if (!date) return '';
+        if (Array.isArray(date)) {
+            return new Date(date[0], date[1] - 1, date[2]).toLocaleDateString();
+        }
+        return date;
+    };
+
+    if (!metrics) return <div>Loading...</div>;
+
+    // Safety checks for rendering
+    const netIncome = metrics.netIncome !== undefined && metrics.netIncome !== null ? metrics.netIncome : 0;
+    const recentTransactions = metrics.recentTransactions || [];
 
     const HeroSection = () => (
         <div style={{
@@ -64,7 +69,7 @@ const Dashboard = () => {
                     transition={{ delay: 0.2 }}
                     style={{ fontSize: '1.5rem', marginBottom: '2rem', color: '#ddd' }}
                 >
-                    Your Net Income this month is <span style={{ color: '#46d369', fontWeight: 'bold' }}>${metrics.netIncome.toLocaleString()}</span>.
+                    Your Net Income this month is <span style={{ color: '#46d369', fontWeight: 'bold' }}>${netIncome.toLocaleString()}</span>.
                     Manage your assets and liabilities with precision.
                 </motion.p>
                 <div className="d-flex gap-3">
@@ -90,7 +95,7 @@ const Dashboard = () => {
                 <h3 style={{ fontSize: '1.2rem', color: '#888' }}>{title}</h3>
                 <Icon color={color} size={24} />
             </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>${value.toLocaleString()}</h2>
+            <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>${(value || 0).toLocaleString()}</h2>
         </motion.div>
     );
 
@@ -110,14 +115,14 @@ const Dashboard = () => {
             <div className="netflix-container">
                 <h3 className="netflix-header">Recent Activity</h3>
                 <div className="d-flex gap-3" style={{ overflowX: 'auto', paddingBottom: '1rem' }}>
-                    {metrics.recentTransactions.map((t) => (
+                    {recentTransactions.map((t) => (
                         <motion.div
                             key={t.id}
                             className="netflix-card p-4"
                             style={{ minWidth: '300px' }}
                         >
                             <div className="d-flex justify-content-between mb-2">
-                                <span style={{ color: '#888' }}>{t.date}</span>
+                                <span style={{ color: '#888' }}>{formatDate(t.date)}</span>
                                 <Activity size={16} color="#888" />
                             </div>
                             <h4>{t.desc}</h4>

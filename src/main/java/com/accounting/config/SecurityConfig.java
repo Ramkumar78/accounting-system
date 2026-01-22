@@ -53,7 +53,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/login", "/error", "/api/auth/**").permitAll()
+                .requestMatchers("/api/login", "/login", "/error", "/api/auth/**").permitAll()
                 .requestMatchers("/users/register").permitAll()
                 .requestMatchers("/admin/**", "/users/**").hasRole("ADMIN")
                 .requestMatchers("/journal/post/**", "/journal/void/**").hasAnyRole("ADMIN", "ACCOUNTANT")
@@ -64,7 +64,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
-                .loginProcessingUrl("/login")
+                .loginProcessingUrl("/api/login")
                 .successHandler((request, response, authentication) -> {
                     response.setStatus(HttpServletResponse.SC_OK);
                     response.setContentType("application/json");
