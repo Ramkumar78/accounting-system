@@ -1,5 +1,6 @@
 package com.accounting.controller;
 
+import com.accounting.dto.UserRegistrationDto;
 import com.accounting.model.User;
 import com.accounting.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,17 @@ public class UserController {
     @GetMapping("/roles")
     public ResponseEntity<List<Role>> listRoles() {
         return ResponseEntity.ok(userService.findAllRoles());
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<User> registerUser(@RequestBody UserRegistrationDto registrationDto) {
+        User user = new User();
+        user.setUsername(registrationDto.getUsername());
+        user.setFullName(registrationDto.getFullName());
+        user.setEmail(registrationDto.getEmail());
+
+        // Default role for self-registration is VIEWER
+        return ResponseEntity.ok(userService.createUser(user, registrationDto.getPassword(), "VIEWER"));
     }
 
     @PostMapping("/save")

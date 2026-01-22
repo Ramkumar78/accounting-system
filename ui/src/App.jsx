@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
+import Register from './components/Register';
 import UserList from './components/UserList';
 import AccountList from './components/AccountList';
 import JournalList from './components/JournalList';
@@ -47,6 +48,7 @@ function App() {
           <div className="container-fluid p-0">
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               <Route path="/" element={<Navigate to="/dashboard" />} />
 
               <Route element={<ProtectedRoute />}>

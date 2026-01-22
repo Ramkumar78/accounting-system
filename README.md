@@ -77,13 +77,27 @@ mvn spring-boot:run
 # Password: admin
 ```
 
+## Running with Docker (Recommended)
+
+To run the full stack application (Backend, Frontend, and MySQL database) using Docker:
+
+1. **Build and start the services:**
+   ```bash
+   docker-compose up --build
+   ```
+
+2. **Access the application:**
+   - Frontend: http://localhost:80 (Register a new account or use admin/admin)
+   - Backend API: http://localhost:8080
+
 ## Installation
 
 ### Prerequisites
 
 - **Java 17** or higher
 - **Maven 3.6+**
-- **MySQL 8.x** (for production)
+- **Docker & Docker Compose**
+- **MySQL 8.x** (for manual production setup)
 
 Verify your Java installation:
 ```bash
@@ -339,6 +353,7 @@ accounting-system/
 | GET | `/login` | Login page |
 | POST | `/login` | Process login |
 | GET/POST | `/logout` | Logout |
+| POST | `/users/register` | Register new user |
 
 ### Dashboard
 | Method | Endpoint | Description |
