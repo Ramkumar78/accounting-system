@@ -52,5 +52,4 @@
 /app/src/main/java/com/accounting/model/JournalEntryLine.java
 /app/src/main/java/com/accounting/dto/ProfitLossDTO.java
 /app/src/main/java/com/accounting/repository/BankAccountRepository.java
-/app/src/main/java/com/accounting/controller/AuthController.java
 /app/src/main/java/com/accounting/controller/DashboardController.java

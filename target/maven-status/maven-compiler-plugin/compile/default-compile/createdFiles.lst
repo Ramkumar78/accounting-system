@@ -33,7 +33,6 @@ com/accounting/service/CurrencyService.class
 com/accounting/model/Customer.class
 com/accounting/repository/UserRepository.class
 com/accounting/model/Account.class
-com/accounting/controller/AuthController.class
 com/accounting/model/Vendor.class
 com/accounting/AccountingApplication.class
 com/accounting/controller/JournalController.class

@@ -7,15 +7,14 @@ import com.accounting.service.BankReconciliationService;
 import com.accounting.service.CurrencyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
-@Controller
+@RestController
 @RequestMapping("/bank")
 @RequiredArgsConstructor
 public class BankReconciliationController {
@@ -25,51 +24,40 @@ public class BankReconciliationController {
     private final CurrencyService currencyService;
 
     @GetMapping("/accounts")
-    public String listBankAccounts(Model model) {
+    public ResponseEntity<List<BankAccount>> listBankAccounts() {
         List<BankAccount> accounts = bankReconciliationService.findAllBankAccounts();
-        model.addAttribute("bankAccounts", accounts);
-        return "bank/accounts";
+        return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("/accounts/new")
-    public String newBankAccountForm(Model model) {
-        model.addAttribute("bankAccount", new BankAccount());
-        model.addAttribute("glAccounts", accountService.findActiveByType(
-                com.accounting.model.AccountType.ASSET));
-        model.addAttribute("currencies", currencyService.findAll());
-        return "bank/account-form";
+    @GetMapping("/accounts/form-data")
+    public ResponseEntity<Map<String, Object>> getFormData() {
+        return ResponseEntity.ok(Map.of(
+            "glAccounts", accountService.findActiveByType(com.accounting.model.AccountType.ASSET),
+            "currencies", currencyService.findAll()
+        ));
     }
 
     @PostMapping("/accounts/save")
-    public String saveBankAccount(@ModelAttribute BankAccount bankAccount, RedirectAttributes redirectAttributes) {
-        bankReconciliationService.saveBankAccount(bankAccount);
-        redirectAttributes.addFlashAttribute("successMessage", "Bank account saved successfully");
-        return "redirect:/bank/accounts";
+    public ResponseEntity<BankAccount> saveBankAccount(@RequestBody BankAccount bankAccount) {
+        return ResponseEntity.ok(bankReconciliationService.saveBankAccount(bankAccount));
     }
 
-    @GetMapping("/accounts/edit/{id}")
-    public String editBankAccountForm(@PathVariable Long id, Model model) {
+    @GetMapping("/accounts/{id}")
+    public ResponseEntity<BankAccount> getBankAccount(@PathVariable Long id) {
         BankAccount bankAccount = bankReconciliationService.findBankAccountById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Bank account not found: " + id));
-
-        model.addAttribute("bankAccount", bankAccount);
-        model.addAttribute("glAccounts", accountService.findActiveByType(
-                com.accounting.model.AccountType.ASSET));
-        model.addAttribute("currencies", currencyService.findAll());
-        return "bank/account-form";
+        return ResponseEntity.ok(bankAccount);
     }
 
     @GetMapping("/reconciliation")
-    public String reconciliationHome(Model model) {
-        model.addAttribute("bankAccounts", bankReconciliationService.findActiveBankAccounts());
-        return "bank/reconciliation-select";
+    public ResponseEntity<List<BankAccount>> reconciliationHome() {
+        return ResponseEntity.ok(bankReconciliationService.findActiveBankAccounts());
     }
 
     @GetMapping("/reconciliation/{bankAccountId}")
-    public String reconcile(@PathVariable Long bankAccountId,
+    public ResponseEntity<Map<String, Object>> reconcile(@PathVariable Long bankAccountId,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                            Model model) {
+                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         BankAccount bankAccount = bankReconciliationService.findBankAccountById(bankAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("Bank account not found: " + bankAccountId));
 
@@ -84,55 +72,38 @@ public class BankReconciliationController {
                 .findStatementsByDateRange(bankAccountId, startDate, endDate);
         List<BankStatement> unreconciled = bankReconciliationService.findUnreconciledStatements(bankAccountId);
 
-        model.addAttribute("bankAccount", bankAccount);
-        model.addAttribute("statements", statements);
-        model.addAttribute("unreconciledStatements", unreconciled);
-        model.addAttribute("reconciledBalance", bankReconciliationService.getReconciledBalance(bankAccountId));
-        model.addAttribute("startDate", startDate);
-        model.addAttribute("endDate", endDate);
-
-        return "bank/reconciliation";
+        return ResponseEntity.ok(Map.of(
+            "bankAccount", bankAccount,
+            "statements", statements,
+            "unreconciledStatements", unreconciled,
+            "reconciledBalance", bankReconciliationService.getReconciledBalance(bankAccountId),
+            "startDate", startDate,
+            "endDate", endDate
+        ));
     }
 
     @PostMapping("/reconciliation/match")
-    public String matchStatement(@RequestParam Long statementId,
-                                 @RequestParam Long journalLineId,
-                                 @RequestParam Long bankAccountId,
-                                 RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> matchStatement(@RequestParam Long statementId,
+                                 @RequestParam Long journalLineId) {
         bankReconciliationService.reconcileStatement(statementId, journalLineId);
-        redirectAttributes.addFlashAttribute("successMessage", "Statement matched successfully");
-        return "redirect:/bank/reconciliation/" + bankAccountId;
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reconciliation/unmatch/{statementId}")
-    public String unmatchStatement(@PathVariable Long statementId,
-                                   @RequestParam Long bankAccountId,
-                                   RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> unmatchStatement(@PathVariable Long statementId) {
         bankReconciliationService.unreconcileStatement(statementId);
-        redirectAttributes.addFlashAttribute("successMessage", "Statement unmatched successfully");
-        return "redirect:/bank/reconciliation/" + bankAccountId;
-    }
-
-    @GetMapping("/statements/import/{bankAccountId}")
-    public String importStatementsForm(@PathVariable Long bankAccountId, Model model) {
-        BankAccount bankAccount = bankReconciliationService.findBankAccountById(bankAccountId)
-                .orElseThrow(() -> new IllegalArgumentException("Bank account not found: " + bankAccountId));
-
-        model.addAttribute("bankAccount", bankAccount);
-        return "bank/import";
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/statements/import/{bankAccountId}")
-    public String importStatements(@PathVariable Long bankAccountId,
-                                   @ModelAttribute BankStatement statement,
-                                   RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> importStatements(@PathVariable Long bankAccountId,
+                                   @RequestBody BankStatement statement) {
         BankAccount bankAccount = bankReconciliationService.findBankAccountById(bankAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("Bank account not found: " + bankAccountId));
 
         statement.setBankAccount(bankAccount);
         bankReconciliationService.importStatement(statement);
 
-        redirectAttributes.addFlashAttribute("successMessage", "Statement imported successfully");
-        return "redirect:/bank/reconciliation/" + bankAccountId;
+        return ResponseEntity.ok().build();
     }
 }

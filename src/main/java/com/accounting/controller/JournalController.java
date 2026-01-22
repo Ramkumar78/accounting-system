@@ -12,16 +12,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
-@Controller
+@RestController
 @RequestMapping("/journal")
 @RequiredArgsConstructor
 public class JournalController {
@@ -30,47 +28,35 @@ public class JournalController {
     private final AccountService accountService;
 
     @GetMapping
-    public String listEntries(@RequestParam(defaultValue = "0") int page,
-                              @RequestParam(defaultValue = "20") int size,
-                              @RequestParam(required = false) String status,
-                              Model model) {
+    public ResponseEntity<Page<JournalEntry>> listEntries(@RequestParam(defaultValue = "0") int page,
+                              @RequestParam(defaultValue = "20") int size) {
         Page<JournalEntry> entries = journalService.findAll(
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "entryDate", "entryNumber")));
-
-        model.addAttribute("entries", entries);
-        model.addAttribute("statuses", EntryStatus.values());
-        model.addAttribute("selectedStatus", status);
-        return "journal/list";
+        return ResponseEntity.ok(entries);
     }
 
-    @GetMapping("/new")
-    public String newEntryForm(Model model) {
-        JournalEntryDTO dto = new JournalEntryDTO();
-        dto.setEntryDate(LocalDate.now());
-        dto.addLine(new JournalEntryDTO.JournalEntryLineDTO());
-        dto.addLine(new JournalEntryDTO.JournalEntryLineDTO());
-
-        model.addAttribute("journalEntry", dto);
-        model.addAttribute("accounts", accountService.findAllActive());
-        return "journal/form";
+    @GetMapping("/form-data")
+    public ResponseEntity<Map<String, Object>> getFormData() {
+        return ResponseEntity.ok(Map.of(
+            "accounts", accountService.findAllActive(),
+            "statuses", EntryStatus.values()
+        ));
     }
 
     @PostMapping("/save")
-    public String saveEntry(@ModelAttribute JournalEntryDTO dto,
-                            @AuthenticationPrincipal User user,
-                            RedirectAttributes redirectAttributes) {
+    public ResponseEntity<JournalEntry> saveEntry(@RequestBody JournalEntryDTO dto,
+                            @AuthenticationPrincipal User user) {
+        JournalEntry entry;
         if (dto.getId() == null) {
-            journalService.createEntry(dto, user);
-            redirectAttributes.addFlashAttribute("successMessage", "Journal entry created successfully");
+            entry = journalService.createEntry(dto, user);
         } else {
-            journalService.updateEntry(dto.getId(), dto);
-            redirectAttributes.addFlashAttribute("successMessage", "Journal entry updated successfully");
+            entry = journalService.updateEntry(dto.getId(), dto);
         }
-        return "redirect:/journal";
+        return ResponseEntity.ok(entry);
     }
 
-    @GetMapping("/edit/{id}")
-    public String editEntryForm(@PathVariable Long id, Model model) {
+    @GetMapping("/{id}")
+    public ResponseEntity<JournalEntryDTO> getEntry(@PathVariable Long id) {
         JournalEntry entry = journalService.findByIdWithLines(id)
                 .orElseThrow(() -> new IllegalArgumentException("Journal entry not found: " + id));
 
@@ -93,44 +79,24 @@ public class JournalController {
             dto.addLine(lineDto);
         });
 
-        model.addAttribute("journalEntry", dto);
-        model.addAttribute("accounts", accountService.findAllActive());
-        return "journal/form";
-    }
-
-    @GetMapping("/view/{id}")
-    public String viewEntry(@PathVariable Long id, Model model) {
-        JournalEntry entry = journalService.findByIdWithLines(id)
-                .orElseThrow(() -> new IllegalArgumentException("Journal entry not found: " + id));
-
-        model.addAttribute("entry", entry);
-        return "journal/view";
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping("/post/{id}")
-    public String postEntry(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> postEntry(@PathVariable Long id) {
         journalService.postEntry(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Journal entry posted successfully");
-        return "redirect:/journal";
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/void/{id}")
-    public String voidEntry(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> voidEntry(@PathVariable Long id) {
         journalService.voidEntry(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Journal entry voided successfully");
-        return "redirect:/journal";
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/delete/{id}")
-    public String deleteEntry(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> deleteEntry(@PathVariable Long id) {
         journalService.deleteEntry(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Journal entry deleted successfully");
-        return "redirect:/journal";
-    }
-
-    @GetMapping("/api/accounts")
-    @ResponseBody
-    public List<Account> getAccounts() {
-        return accountService.findAllActive();
+        return ResponseEntity.ok().build();
     }
 }
