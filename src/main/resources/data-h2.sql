@@ -6,10 +6,10 @@ MERGE INTO roles (id, name, description) KEY(name) VALUES
     (2, 'ACCOUNTANT', 'Can manage accounts, journal entries, and reports'),
     (3, 'VIEWER', 'Read-only access to view reports');
 
--- Default Admin User (password: admin123)
--- BCrypt hash for 'admin123'
+-- Default Admin User (password: admin)
+-- BCrypt hash for 'admin'
 MERGE INTO users (id, username, password, email, full_name, role_id, enabled, created_at) KEY(username) VALUES
-    (1, 'admin', '$2a$10$PYn5KLlYP1n4P4PGcIdqnOg1fd4oLnJiixzIO9A56LUpts493lswa', 'admin@accounting.local', 'System Administrator', 1, true, CURRENT_TIMESTAMP);
+    (1, 'admin', '$2a$10$NzYc3vdIPmEHRaV2XqQPgOZ2HqaMVB/Pe7CFgitL58b2xOH7uUfZq', 'admin@accounting.local', 'System Administrator', 1, true, CURRENT_TIMESTAMP);
 
 -- Currencies
 MERGE INTO currencies (id, code, name, symbol, exchange_rate, is_base) KEY(code) VALUES
