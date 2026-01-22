@@ -5,16 +5,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // proxy: {
-    //   '/api': {
-    //     target: 'http://localhost:8080',
-    //     changeOrigin: true,
-    //     rewrite: (path) => path.replace(/^\/api/, '')
-    //   },
-    //   // Also proxy /login and /logout for auth to work if not under /api
-    //   '/login': 'http://localhost:8080',
-    //   '/logout': 'http://localhost:8080'
-    // }
-    // Disable proxy for frontend verification since backend isn't running
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      // '/login' removed so it is handled by React Router
+      '/logout': 'http://localhost:8080',
+      '/users': 'http://localhost:8080'
+    }
   }
 })

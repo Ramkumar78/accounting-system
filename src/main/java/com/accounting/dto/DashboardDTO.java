@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -22,4 +24,5 @@ public class DashboardDTO {
     private Long pendingJournalEntries = 0L;
     private Long overdueInvoices = 0L;
     private BigDecimal overdueAmount = BigDecimal.ZERO;
+    private List<RecentTransactionDTO> recentTransactions = new ArrayList<>();
 }

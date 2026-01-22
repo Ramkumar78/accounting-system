@@ -79,4 +79,4 @@ MERGE INTO accounts (id, code, name, account_type, description, is_active) KEY(c
 MERGE INTO fiscal_years (id, name, start_date, end_date, is_closed) KEY(name) VALUES
     (1, 'FY 2024', '2024-01-01', '2024-12-31', false),
     (2, 'FY 2025', '2025-01-01', '2025-12-31', false),
-    (3, 'FY 2026', '2026-01-01', '2026-12-31', false);
+    (3, 'FY 2026', '2026-01-01', '2026-12-31', false);ALTER TABLE users ALTER COLUMN id RESTART WITH 100;
