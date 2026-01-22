@@ -3,20 +3,19 @@ package com.accounting.controller;
 import com.accounting.dto.DashboardDTO;
 import com.accounting.service.ReportService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 public class DashboardController {
 
     private final ReportService reportService;
 
-    @GetMapping({"/", "/dashboard"})
-    public String dashboard(Model model) {
+    @GetMapping({"/dashboard", "/api/dashboard"})
+    public ResponseEntity<DashboardDTO> dashboard() {
         DashboardDTO dashboard = reportService.generateDashboard();
-        model.addAttribute("dashboard", dashboard);
-        return "dashboard";
+        return ResponseEntity.ok(dashboard);
     }
 }

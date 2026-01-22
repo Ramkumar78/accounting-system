@@ -8,13 +8,14 @@ import com.accounting.service.ReportService;
 import com.accounting.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import com.accounting.dto.LedgerDTO;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Map;
 
-@Controller
+@RestController
 @RequestMapping("/reports")
 @RequiredArgsConstructor
 public class ReportController {
@@ -23,66 +24,38 @@ public class ReportController {
     private final LedgerService ledgerService;
     private final AccountService accountService;
 
-    @GetMapping
-    public String reportsHome() {
-        return "reports/index";
-    }
-
     @GetMapping("/trial-balance")
-    public String trialBalance(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate,
-                               Model model) {
+    public ResponseEntity<TrialBalanceDTO> trialBalance(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate) {
         if (asOfDate == null) {
             asOfDate = LocalDate.now();
         }
-
-        TrialBalanceDTO trialBalance = reportService.generateTrialBalance(asOfDate);
-
-        model.addAttribute("trialBalance", trialBalance);
-        model.addAttribute("asOfDate", asOfDate);
-
-        return "reports/trial-balance";
+        return ResponseEntity.ok(reportService.generateTrialBalance(asOfDate));
     }
 
     @GetMapping("/profit-loss")
-    public String profitLoss(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                             Model model) {
+    public ResponseEntity<ProfitLossDTO> profitLoss(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         if (startDate == null) {
             startDate = LocalDate.now().withDayOfYear(1);
         }
         if (endDate == null) {
             endDate = LocalDate.now();
         }
-
-        ProfitLossDTO profitLoss = reportService.generateProfitLoss(startDate, endDate);
-
-        model.addAttribute("profitLoss", profitLoss);
-        model.addAttribute("startDate", startDate);
-        model.addAttribute("endDate", endDate);
-
-        return "reports/profit-loss";
+        return ResponseEntity.ok(reportService.generateProfitLoss(startDate, endDate));
     }
 
     @GetMapping("/balance-sheet")
-    public String balanceSheet(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate,
-                               Model model) {
+    public ResponseEntity<BalanceSheetDTO> balanceSheet(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOfDate) {
         if (asOfDate == null) {
             asOfDate = LocalDate.now();
         }
-
-        BalanceSheetDTO balanceSheet = reportService.generateBalanceSheet(asOfDate);
-
-        model.addAttribute("balanceSheet", balanceSheet);
-        model.addAttribute("asOfDate", asOfDate);
-
-        return "reports/balance-sheet";
+        return ResponseEntity.ok(reportService.generateBalanceSheet(asOfDate));
     }
 
     @GetMapping("/general-ledger")
-    public String generalLedger(@RequestParam(required = false) Long accountId,
+    public ResponseEntity<Map<String, Object>> generalLedger(@RequestParam(required = false) Long accountId,
                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                Model model) {
+                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         if (startDate == null) {
             startDate = LocalDate.now().withDayOfYear(1);
         }
@@ -90,15 +63,16 @@ public class ReportController {
             endDate = LocalDate.now();
         }
 
-        model.addAttribute("accounts", accountService.findAllActive());
-        model.addAttribute("startDate", startDate);
-        model.addAttribute("endDate", endDate);
-
+        LedgerDTO ledger = null;
         if (accountId != null) {
-            model.addAttribute("ledger", ledgerService.generateLedger(accountId, startDate, endDate));
-            model.addAttribute("selectedAccountId", accountId);
+            ledger = ledgerService.generateLedger(accountId, startDate, endDate);
         }
 
-        return "reports/general-ledger";
+        return ResponseEntity.ok(Map.of(
+            "accounts", accountService.findAllActive(),
+            "startDate", startDate,
+            "endDate", endDate,
+            "ledger", ledger != null ? ledger : "null"
+        ));
     }
 }

@@ -5,14 +5,14 @@ import com.accounting.model.AccountType;
 import com.accounting.service.AccountService;
 import com.accounting.service.CurrencyService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
-@Controller
+@RestController
 @RequestMapping("/accounts")
 @RequiredArgsConstructor
 public class AccountController {
@@ -21,77 +21,60 @@ public class AccountController {
     private final CurrencyService currencyService;
 
     @GetMapping
-    public String listAccounts(Model model) {
-        model.addAttribute("accounts", accountService.findAllActive());
-        model.addAttribute("accountTypes", AccountType.values());
-        return "accounts/list";
+    public ResponseEntity<List<Account>> listAccounts() {
+        return ResponseEntity.ok(accountService.findAllActive());
     }
 
     @GetMapping("/all")
-    public String listAllAccounts(Model model) {
-        model.addAttribute("accounts", accountService.findAll());
-        model.addAttribute("accountTypes", AccountType.values());
-        model.addAttribute("showInactive", true);
-        return "accounts/list";
+    public ResponseEntity<List<Account>> listAllAccounts() {
+        return ResponseEntity.ok(accountService.findAll());
     }
 
-    @GetMapping("/new")
-    public String newAccountForm(Model model) {
-        model.addAttribute("account", new Account());
-        model.addAttribute("accountTypes", AccountType.values());
-        model.addAttribute("currencies", currencyService.findAll());
-        model.addAttribute("parentAccounts", accountService.findAllActive());
-        return "accounts/form";
+    // For form data (types, currencies, parents), we can have a separate endpoint or fetch them individually
+    @GetMapping("/form-data")
+    public ResponseEntity<Map<String, Object>> getFormData() {
+        return ResponseEntity.ok(Map.of(
+            "accountTypes", AccountType.values(),
+            "currencies", currencyService.findAll(),
+            "parentAccounts", accountService.findAllActive()
+        ));
     }
 
     @PostMapping("/save")
-    public String saveAccount(@ModelAttribute Account account, RedirectAttributes redirectAttributes) {
-        accountService.save(account);
-        redirectAttributes.addFlashAttribute("successMessage", "Account saved successfully");
-        return "redirect:/accounts";
+    public ResponseEntity<Account> saveAccount(@RequestBody Account account) {
+        return ResponseEntity.ok(accountService.save(account));
     }
 
-    @GetMapping("/edit/{id}")
-    public String editAccountForm(@PathVariable Long id, Model model) {
+    @GetMapping("/{id}")
+    public ResponseEntity<Account> getAccount(@PathVariable Long id) {
         Account account = accountService.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
-        model.addAttribute("account", account);
-        model.addAttribute("accountTypes", AccountType.values());
-        model.addAttribute("currencies", currencyService.findAll());
-        model.addAttribute("parentAccounts", accountService.findAllActive());
-        return "accounts/form";
+        return ResponseEntity.ok(account);
     }
 
-    @GetMapping("/view/{id}")
-    public String viewAccount(@PathVariable Long id, Model model) {
+    @GetMapping("/{id}/balance")
+    public ResponseEntity<Map<String, Object>> getAccountBalance(@PathVariable Long id) {
         Account account = accountService.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
         BigDecimal balance = accountService.getBalance(id);
-        model.addAttribute("account", account);
-        model.addAttribute("balance", balance);
-        return "accounts/view";
+        return ResponseEntity.ok(Map.of("account", account, "balance", balance));
     }
 
     @PostMapping("/deactivate/{id}")
-    public String deactivateAccount(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> deactivateAccount(@PathVariable Long id) {
         accountService.deactivate(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Account deactivated successfully");
-        return "redirect:/accounts";
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/activate/{id}")
-    public String activateAccount(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> activateAccount(@PathVariable Long id) {
         accountService.activate(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Account activated successfully");
-        return "redirect:/accounts/all";
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/by-type/{type}")
-    public String listByType(@PathVariable String type, Model model) {
+    public ResponseEntity<List<Account>> listByType(@PathVariable String type) {
         AccountType accountType = AccountType.valueOf(type.toUpperCase());
-        model.addAttribute("accounts", accountService.findActiveByType(accountType));
-        model.addAttribute("accountTypes", AccountType.values());
-        model.addAttribute("selectedType", accountType);
-        return "accounts/list";
+        return ResponseEntity.ok(accountService.findActiveByType(accountType));
     }
 }

@@ -1,5 +1,6 @@
 package com.accounting.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,6 +36,7 @@ public class Account {
     private Account parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Account> children = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)

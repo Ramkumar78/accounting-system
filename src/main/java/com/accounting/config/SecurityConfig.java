@@ -7,12 +7,19 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -41,10 +48,12 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, UserService userService) throws Exception {
         http
             .authenticationProvider(authenticationProvider(userService))
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable()) // Disable CSRF for migration simplicity
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/login", "/error").permitAll()
+                .requestMatchers("/login", "/error", "/api/auth/**").permitAll()
                 .requestMatchers("/admin/**", "/users/**").hasRole("ADMIN")
                 .requestMatchers("/journal/post/**", "/journal/void/**").hasAnyRole("ADMIN", "ACCOUNTANT")
                 .requestMatchers("/journal/new", "/journal/edit/**").hasAnyRole("ADMIN", "ACCOUNTANT")
@@ -54,29 +63,53 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
-                .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login?error=true")
+                .successHandler((request, response, authentication) -> {
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\":\"success\",\"message\":\"Login successful\"}");
+                })
+                .failureHandler((request, response, exception) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\":\"error\",\"message\":\"Login failed\"}");
+                })
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\":\"success\",\"message\":\"Logout successful\"}");
+                })
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             )
             .exceptionHandling(ex -> ex
-                .accessDeniedPage("/access-denied")
-            )
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**")
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\":\"error\",\"message\":\"Unauthorized\"}");
+                })
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
             );
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000", "http://localhost:80")); // Allow Vite/React dev server
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

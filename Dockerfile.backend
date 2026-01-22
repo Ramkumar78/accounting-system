@@ -1,0 +1,22 @@
+# Use an official OpenJDK runtime as a parent image
+FROM eclipse-temurin:17-jdk-jammy
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the mvnw wrapper and pom.xml
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# Download dependencies (this step is cached if pom.xml doesn't change)
+RUN ./mvnw dependency:go-offline
+
+# Copy the project source
+COPY src src
+
+# Build the application
+RUN ./mvnw package -DskipTests
+
+# Run the jar file
+ENTRYPOINT ["java", "-jar", "target/accounting-system-1.0.0-SNAPSHOT.jar"]
