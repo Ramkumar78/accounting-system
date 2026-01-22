@@ -1,36 +1,67 @@
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './components/Login';
+import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
+import Login from './components/Login';
+import UserList from './components/UserList';
 import AccountList from './components/AccountList';
-import InvoiceList from './components/InvoiceList';
 import JournalList from './components/JournalList';
 import LedgerView from './components/LedgerView';
 import Reports from './components/Reports';
-import BankList from './components/BankList';
-import UserList from './components/UserList';
 import ProtectedRoute from './components/ProtectedRoute';
-import Navigation from './components/Navigation';
+
+// Theme Context
+const ThemeContext = createContext();
+
+export const useTheme = () => useContext(ThemeContext);
+
+const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useState('dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
 
 function App() {
+  const isAuthenticated = () => {
+    return localStorage.getItem('token') !== null;
+  };
+
   return (
-    <Router>
-      <Navigation />
-      <div className="container mt-4">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/accounts" element={<ProtectedRoute><AccountList /></ProtectedRoute>} />
-          <Route path="/invoices" element={<ProtectedRoute><InvoiceList /></ProtectedRoute>} />
-          <Route path="/journal" element={<ProtectedRoute><JournalList /></ProtectedRoute>} />
-          <Route path="/ledger" element={<ProtectedRoute><LedgerView /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-          <Route path="/bank" element={<ProtectedRoute><BankList /></ProtectedRoute>} />
-          <Route path="/users" element={<ProtectedRoute><UserList /></ProtectedRoute>} />
-        </Routes>
-      </div>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <div className="App">
+          <Navigation />
+          <div className="container-fluid p-0">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/accounts" element={<AccountList />} />
+                <Route path="/journals" element={<JournalList />} />
+                <Route path="/ledger" element={<LedgerView />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/users" element={<UserList />} />
+              </Route>
+            </Routes>
+          </div>
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 
