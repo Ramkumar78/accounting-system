@@ -196,6 +196,12 @@ The backend provides a RESTful API. Key endpoints include:
 
 *Note: Most endpoints require authentication.*
 
+### API Documentation (Swagger/OpenAPI)
+The API documentation is available via Swagger UI when the application is running.
+
+- **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- **OpenAPI JSON**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
 ## Database Schema
 
 The database schema includes the following core tables:
