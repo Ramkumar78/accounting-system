@@ -9,8 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/accounts")
@@ -21,8 +23,19 @@ public class AccountController {
     private final CurrencyService currencyService;
 
     @GetMapping
-    public ResponseEntity<List<Account>> listAccounts() {
-        return ResponseEntity.ok(accountService.findAllActive());
+    public ResponseEntity<List<Map<String, Object>>> listAccounts() {
+        List<Account> accounts = accountService.findAllActive();
+        List<Map<String, Object>> result = accounts.stream().map(account -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", account.getId());
+            map.put("code", account.getCode());
+            map.put("name", account.getName());
+            map.put("type", account.getAccountType());
+            map.put("description", account.getDescription());
+            map.put("balance", accountService.getBalance(account.getId()));
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/all")

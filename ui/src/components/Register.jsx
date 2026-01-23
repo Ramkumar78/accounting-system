@@ -46,7 +46,9 @@ const Register = () => {
             backgroundSize: 'cover',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            position: 'relative',
+            zIndex: 10
         }}>
             <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -56,7 +58,9 @@ const Register = () => {
                     padding: '3rem',
                     borderRadius: '4px',
                     width: '100%',
-                    maxWidth: '450px'
+                    maxWidth: '450px',
+                    position: 'relative',
+                    zIndex: 20
                 }}
             >
                 <h1 style={{ color: 'white', marginBottom: '2rem', fontWeight: 'bold' }}>Sign Up</h1>

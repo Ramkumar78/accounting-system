@@ -44,7 +44,9 @@ const Login = () => {
             backgroundSize: 'cover',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            position: 'relative',
+            zIndex: 10
         }}>
             <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -55,7 +57,9 @@ const Login = () => {
                     borderRadius: '4px',
                     width: '100%',
                     maxWidth: '450px',
-                    minHeight: '600px'
+                    minHeight: '600px',
+                    position: 'relative',
+                    zIndex: 20
                 }}
             >
                 <h1 style={{ color: 'white', marginBottom: '2rem', fontWeight: 'bold' }}>Sign In</h1>
@@ -69,6 +73,7 @@ const Login = () => {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             style={{ background: '#333', border: 'none', color: 'white', height: '50px' }}
+                            autoComplete="username"
                         />
                     </div>
                     <div className="mb-4">
